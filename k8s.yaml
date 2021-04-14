@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi
+spec:
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi
+          image: python-graphql_graphql
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              sleep 86400
+          ports:
+            - containerPort: 8000
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seeding
+spec:
+  template:
+    spec:
+      containers:
+        - name: seeding
+          image: python-graphql_seeding
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              sleep 86400
+        - name: mysql
+          image: mysql:5.7
+          env:
+            - name: MYSQL_DATABASE
+              value: test
+            - name: MYSQL_ROOT_PASSWORD
+              value: test
+            - name: MYSQL_USER
+              value: test
+            - name: MYSQL_PASSWORD
+              value: test
+          ports:
+            - containerPort: 3306
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  selector:
+    app: seeding
+  ports:
+    - port: 3306
+      targetPort: 3306
